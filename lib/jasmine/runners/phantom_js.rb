@@ -13,6 +13,8 @@ module Jasmine
       end
 
       def run
+        failed_compilation = false
+
         phantom_script = File.join(File.dirname(__FILE__), 'phantom_jasmine_run.js')
         command = "#{phantom_js_path} '#{phantom_script}' #{jasmine_server_url} #{show_console_log} '#{@phantom_config_script}'"
         IO.popen(command) do |output|
@@ -39,12 +41,20 @@ module Jasmine
               formatter.format([config_failure])
               @show_console_log = true
               puts line
+            elsif line =~ /^Error: ExecJS::RuntimeError: SyntaxError/
+              failed_compilation = true
+              @show_console_log = true
+              puts line
             elsif show_console_log
               puts line
             end
           end
         end
         formatter.done
+
+        if failed_compilation
+          raise "You have some invalid CoffeeScript!"
+        end
       end
 
       def phantom_js_path
@@ -60,4 +70,3 @@ module Jasmine
     end
   end
 end
-
